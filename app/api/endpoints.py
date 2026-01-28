@@ -2,7 +2,7 @@ import json
 from fastapi import APIRouter, Depends, HTTPException, status
 from datetime import datetime
 from pathlib import Path
-from app.core.security import api_key_auth 
+from app.core.security import api_key_auth
 from app.core.config import settings
 from app.models.schemas import (
     NatalChartRequest, NatalChartResponse,
@@ -33,12 +33,13 @@ forecast_service = ForecastService()
 DEBUG_DIR = Path("debug_outputs")
 DEBUG_DIR.mkdir(exist_ok=True)
 
+
 def save_debug_output(filename: str, data: dict, content_type: str = "json"):
     """Save debug output to filesystem only if debug outputs are enabled."""
     # Check if debug outputs are enabled
     if not settings.enable_debug_outputs:
         return None
-    
+
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     if content_type == "json":
         filepath = DEBUG_DIR / f"{filename}_{timestamp}.json"
@@ -55,8 +56,9 @@ def save_debug_output(filename: str, data: dict, content_type: str = "json"):
     print(f"Debug output saved: {filepath}")
     return filepath
 
+
 @router.get("/health", response_model=HealthResponse)
-async def health_check():
+def health_check():
     """Health check endpoint."""
     return HealthResponse(
         status="healthy",
@@ -64,15 +66,16 @@ async def health_check():
         swiss_ephemeris=HAVE_SWE
     )
 
+
 @router.post("/natal", response_model=NatalChartResponse)
-async def compute_natal_chart(
+def compute_natal_chart(
     request: NatalChartRequest,
     _: str = Depends(api_key_auth)
 ):
     """Compute a natal chart."""
     try:
         result = chart_service.compute_natal_chart(request)
-        
+
         # Save debug output
         debug_data = {
             "request": request.model_dump(),
@@ -80,7 +83,7 @@ async def compute_natal_chart(
             "timestamp": datetime.now().isoformat()
         }
         save_debug_output("natal_chart", debug_data)
-        
+
         return result
     except Exception as e:
         error_data = {
@@ -96,15 +99,16 @@ async def compute_natal_chart(
 
 
 @router.post("/svg", response_model=SVGResponse)
-async def generate_svg(
+def generate_svg(
     request: SVGRequest,
     _: str = Depends(api_key_auth)
 ):
     """Generate SVG chart wheel."""
     try:
         result = svg_service.generate_wheel(request)
-        result = SVGResponse(svg_content=result["svg_content"], size=request.size)
-        
+        result = SVGResponse(
+            svg_content=result["svg_content"], size=request.size)
+
         # Save debug outputs
         debug_data = {
             "request": request.model_dump(),
@@ -113,7 +117,7 @@ async def generate_svg(
         }
         save_debug_output("svg_request", debug_data)
         save_debug_output("svg_chart", result.svg_content, "svg")
-        
+
         return result
     except Exception as e:
         error_data = {
@@ -129,15 +133,16 @@ async def generate_svg(
 
 
 @router.post("/biwheel", response_model=SVGResponse)
-async def generate_biwheel(
+def generate_biwheel(
     request: BiwheelRequest,
     _: str = Depends(api_key_auth)
 ):
     """Generate synastry biwheel SVG."""
     try:
         result = svg_service.generate_biwheel(request)
-        result = SVGResponse(svg_content=result["svg_content"], size=request.size)
-        
+        result = SVGResponse(
+            svg_content=result["svg_content"], size=request.size)
+
         # Save debug outputs
         debug_data = {
             "request": request.model_dump(),
@@ -146,7 +151,7 @@ async def generate_biwheel(
         }
         save_debug_output("biwheel_request", debug_data)
         save_debug_output("biwheel_chart", result.svg_content, "svg")
-        
+
         return result
     except Exception as e:
         error_data = {
@@ -162,7 +167,7 @@ async def generate_biwheel(
 
 
 @router.post("/synastry", response_model=SynastryResponse)
-async def calculate_synastry(
+def calculate_synastry(
     request: SynastryRequest,
     _: str = Depends(api_key_auth)
 ):
@@ -170,7 +175,7 @@ async def calculate_synastry(
     try:
         aspects = synastry_aspects(request.chart_a, request.chart_b)
         result = SynastryResponse(interaspects=aspects)
-        
+
         # Save debug output
         debug_data = {
             "request": request.model_dump(),
@@ -178,7 +183,7 @@ async def calculate_synastry(
             "timestamp": datetime.now().isoformat()
         }
         save_debug_output("synastry", debug_data)
-        
+
         return result
     except Exception as e:
         error_data = {
@@ -194,7 +199,7 @@ async def calculate_synastry(
 
 
 @router.post("/composite", response_model=CompositeResponse)
-async def calculate_composite(
+def calculate_composite(
     request: CompositeRequest,
     _: str = Depends(api_key_auth)
 ):
@@ -202,7 +207,7 @@ async def calculate_composite(
     try:
         midpoints = composite_midpoints(request.chart_a, request.chart_b)
         result = CompositeResponse(midpoints=midpoints)
-        
+
         # Save debug output
         debug_data = {
             "request": request.model_dump(),
@@ -210,7 +215,7 @@ async def calculate_composite(
             "timestamp": datetime.now().isoformat()
         }
         save_debug_output("composite", debug_data)
-        
+
         return result
     except Exception as e:
         error_data = {
@@ -226,14 +231,14 @@ async def calculate_composite(
 
 
 @router.post("/report", response_model=ReportResponse)
-async def generate_report(
+def generate_report(
     request: ReportRequest,
     _: str = Depends(api_key_auth)
 ):
     """Generate markdown report from chart data."""
     try:
         result = report_service.generate_report(request)
-        
+
         # Save debug outputs
         debug_data = {
             "request": request.model_dump(),
@@ -242,7 +247,7 @@ async def generate_report(
         }
         save_debug_output("report_request", debug_data)
         save_debug_output("report_content", result.report_content, "markdown")
-        
+
         return result
     except Exception as e:
         error_data = {
@@ -258,14 +263,14 @@ async def generate_report(
 
 
 @router.post("/forecast", response_model=ForecastResponse)
-async def generate_forecast(
+def generate_forecast(
     request: ForecastRequest,
     _: str = Depends(api_key_auth)
 ):
     """Generate transit forecast."""
     try:
         result = forecast_service.generate_forecast(request)
-        
+
         # Save debug output
         debug_data = {
             "request": request.model_dump(),
@@ -273,7 +278,7 @@ async def generate_forecast(
             "timestamp": datetime.now().isoformat()
         }
         save_debug_output("forecast", debug_data)
-        
+
         return result
     except Exception as e:
         error_data = {
