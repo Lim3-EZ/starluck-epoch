@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     enable_debug_outputs: bool = False
     
     # Security Configuration
-    allowed_hosts: List[str] = ["127.0.0.1", "localhost"]
+    allowed_hosts: List[str] = ["*"]
     api_key: Optional[str] = None
     enable_api_key_auth: bool = False
     
@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     swe_path: Optional[str] = None
     
     # CORS Configuration
-    cors_origins: List[str] = ["http://localhost:8001", "http://127.0.0.1:8001"]
+    cors_origins: List[str] = ["*"]
     
     @field_validator("allowed_hosts", mode="before")
     @classmethod
